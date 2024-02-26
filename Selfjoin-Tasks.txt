@@ -1,0 +1,40 @@
+1. Display the employee details who joined after BLAKE without using sub query.
+SQL >> select a.* from emp a, emp b where b.ename = 'BLAKE' and b.hiredate
+< a.hiredate
+
+2. Find the salaries greater than Jones salary without using sub query.
+SQL >> select a.* from emp a, emp b where b.ename = 'JONES' and b.sal <
+a.sal
+
+3. List the Emps along with their dname who are getting more salary to their own
+MGRS .
+SQL >> select e.*, d.dname from emp e, emp m, dept d where e.mgr =
+m.empno and e.sal > m.sal and e.deptno = d.deptno
+
+4. Find out the mgr’s name who has mimimum 2 employees working under him.
+SQL >> select m.ename, count(*) from emp e, emp m where e.mgr = m.empno
+group by m.ename having count(*) >= 2
+
+5. Find out the mgr wise no. of Analyst working under them
+SQL >> select m.ename, count(*) from emp e, emp m where e.mgr =
+m.empno and e.job = 'ANALYST' group by m.ename
+
+6. Find out the mgr who has maximum number of employee working under him
+SQL >> select m.ename, count(*) from emp e, emp m where e.mgr =
+m.empno group by m.ename having count(*) = (select max(count(*)) from
+emp e, emp m where e.mgr = m.empno group by m.ename)
+
+7. Select all the departmental information and grade for all the mgrs along with their
+name and salary.
+SQL >> select distinct m.ename, m.sal, d.*, s.grade from emp e, emp m, dept
+d, salgrade s where e.mgr = m.empno and m.deptno = d.deptno and m.sal
+between s.losal and s.hisal
+
+8. Find out the grade of all mgrs
+SQL >> select distinct m.ename, s.grade from emp e, emp m, salgrade s
+where e.mgr = m.empno and m.sal between s.losal and s.hisal
+
+9. Find out the grade of all mgrs who belong from CHICAGO.
+SQL >> select distinct m.ename, s.grade from emp e, emp m, salgrade s,
+dept d where e.mgr = m.empno and m.sal between s.losal and s.hisal and
+m.deptno = d.deptno and d.loc = 'CHICAGO'
