@@ -1,0 +1,61 @@
+Advanced Database Management System
+
+Lab Quiz
+
+ID: 21-44649-1
+
+1. Find out the manager names and the number of employees they manage
+>> select m.ename, count(*) from emp e, emp m where e.mgr = m.empno group by m.ename
+
+2. List out the Name, Job, Salary, grade of the emps in the department with the highest no. of employees.
+>> select ename, job, sal, grade from emp, salgrade where sal between losal and hisal and grade in 
+(select grade from emp, salgrade where sal between losal and hisal having 
+count(*) = (select max(count(*)) from emp, salgrade where sal between losal and hisal group by grade) 
+group by grade)
+
+3. Find out the grade with the most senior employee.
+>> select grade from emp, salgrade where sal between losal and hisal and 
+hiredate = (select max(hiredate) from emp)
+
+4. Find out the grade with maximum number of MANAGERS.
+>> select grade from emp, salgrade where sal between losal and hisal 
+having count(*) = (select max(count(*)) from emp group by mgr) group by grade
+
+5. List all the Grade2 and Grade 3 emps who belong from CHICAGO.
+>> select emp.* from emp, dept, salgrade where emp.deptno = dept.deptno and sal 
+between losal and hisal and grade in (2,3) and loc = 'CHICAGO'
+
+6. List THE Name of dept where highest no. of emps are working.
+>> select dname from emp, dept where emp.deptno = dept.deptno having count(*) = 
+(select max(count(*)) from emp, dept where emp.deptno = dept.deptno group by dname) group by dname
+
+7. Find the highest paid MANAGER from DALLAS who belong from the grade 2 and 3.
+>> select empno, ename, job, loc, dname, grade from emp, dept, salgrade where emp.deptno = dept.deptno 
+and sal between losal and hisal and empno in (select mgr from emp, dept, salgrade 
+where emp.deptno = dept.deptno and sal between losal and hisal and 
+count(*) = (select max(count(*)) from emp, dept, salgrade where emp.deptno = dept.deptno and 
+sal between losal and hisal and loc = 'DALLAS' and grade in (2,3) group by mgr) grade in (2,3) group by mgr) and
+ loc = 'DALLAS'
+
+8. Find out the details of the MANAGERS whose DEPTNO same as CLARK and who earns more than SMITH. (Without using subquery)
+>> select m.* from emp e, emp m, emp data1, emp data2 where e.mgr = m.empno and e.empno = data1.empno and 
+e.empno = data2.empno and 
+((data1.ename = 'CLARK' and m.deptno = data1.deptno) or (data2.ename = 'SMITH' and m.sal > data2.sal))  
+
+9. Find out the empno,ename,job,loc,dname and grade of all mgrs.
+>> select empno, ename, job, loc, dname, grade from emp, dept, salgrade where 
+emp.deptno = dept.deptno and sal between losal and hisal and empno in (select mgr from emp)
+
+10. Find out the name of the mgr who manage the maximum number of employees.
+>> select m.ename from emp e, emp m where e.mgr = m.empno having count(*) = (select max(count(*)) 
+ from emp e, emp m where e.mgr = m.empno group by m.ename) group by m.ename
+
+11. Find out the mgr who lives in DALLAS and belong from grade 3 and 4.
+>> select empno, ename, job, loc, dname, grade from emp, dept, salgrade where emp.deptno = dept.deptno 
+and sal between losal and hisal and empno in (select mgr from emp, dept, salgrade 
+where emp.deptno = dept.deptno and sal between losal and hisal and loc = 'DALLAS') and grade in (3,4)
+
+12. Find out the details of the grade 2 mgrs Who manage the maximum no of employee.
+>> select m.ename from emp e, emp m where e.mgr = m.empno having count(*) = (select max(count(*)) 
+from emp e, emp m, salgrade s where e.mgr = m.empno and m.sal between s.losal and s.hisal 
+and s.grade in (2) group by m.ename)
