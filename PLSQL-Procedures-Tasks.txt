@@ -1,0 +1,170 @@
+Advance Database management System (ADBMS)
+
+LAB EXERCISE
+
+Table Structures:
+Emp (Empno, Ename, Job, Hiredate, Salary, Comm, Deptno)
+Dept (Deptno, Dname, Location)
+Salgrade (Grade, Losal, Hisal)
+
+
+1.	Create a procedure which will take department number as an input and show the department name,loc and no. of employees working on it.
+SQL >> 
+--- PROCEDURE ---
+create or replace procedure dept_info (dept_deptno Dept.Deptno%type)
+is
+  dept_dname Dept.Dname%type;
+  dept_loc Dept.Loc%type;
+  dept_count number;
+
+begin
+
+  select d.dname, d.loc, count(e.empno) into dept_dname, dept_loc, dept_count from Dept d, Emp e where d.Deptno = e.Deptno and d.deptno = dept_deptno group by d.dname, d.loc
+
+  dbms_output.put_line('Dept Name: ' || dept_dname);
+  dbms_output.put_line('Location: ' || dept_loc);
+  dbms_output.put_line('Number of Employees: ' || dept_count);
+
+end;
+
+--- ANONYMOUS BLOCK FOR USER INPUT ---
+declare
+  dept_deptno Dept.Deptno%type =: dept_no;
+begin
+  dept_info(dept_no);
+end;
+
+2.	Create procedure which gets the name of all the employees and find out every one's job and bind it to an out parameter. (Use cursor for loop)
+SQL >>
+--- PROCEDURE ---
+create or replace procedure employee_job_list (job_list out varchar2)
+is
+  cursor emp_search_data
+  is
+  select ename, job from emp;
+  emp_loop_var number(2);
+  current_emp_job_data varchar2(4000);
+
+begin
+ 
+  job_list := '';
+  
+  for emp_loop_var in emp_search_data loop
+    current_emp_job_data := emp_loop_var.ename || ': ' || emp_loop_var.job;
+    job_list := job_list || current_emp_job_data || ', ';
+  end loop;
+
+end;
+
+--- ANONYMOUS BLOCK FOR PROCEDURE EXECUTION ---
+declare
+  job_list varchar2(4000);
+begin
+  employee_job_list(job_list);
+  dbms_output.put_line('List of Employee Jobs: ' || job_list);
+end;
+
+3.	 Create a procedure which will receive all the  deptno one by one each time when the procedure will be called and find out total salary of the employees belong from that department and bind it to an out parameter. (Use cursor for loop) 
+SQL >>
+--- FUNCTION - TO FIND THE TOTAL EARNED SALARY OF EACH DEPT ---
+create or replace function dept_total_salary (d_deptno Dept.Deptno%type)
+return number
+is
+  cursor emp_sal_list_deptwise
+  is
+  select Salary from emp where Deptno = d_deptno;
+  d_total_salary Emp.Salary%type := 0;
+  i number(2);
+begin
+
+  for i in emp_sal_list_deptwise loop
+    d_total_salary := d_total_salary + emp_sal_list_deptwise.Salary;
+  end loop
+  return d_total_salary;
+
+end;
+
+--- PROCEDURE - MAKE THE SALARY LIST ---
+create or replace procedure dept_total_salary_list (result out varchar2)
+is
+  cursor dept_list
+  is
+  select Deptno, Dname from Dept;
+  dept_dname Dept.Dname%type;
+  dept_total_sal Emp.Salary%type;
+  i number(2)
+
+begin
+
+  result := '';
+  
+  for i in dept_list loop
+    dept_dname := 'Department Name: ' || i.Dname ;
+    dept_total_sal := 'Total Salary: ' || dept_total_salary (i.Deptno);
+    result := result || dept_dname || ', ' || dept_total_sal || '; ' ;
+  end loop;
+end;
+
+--- ANONYMOUS BLOCK FOR PROCEDURE EXECUTION ---
+declare
+  deptwise_total_salary varchar2(4000);
+begin
+  dept_total_salary_list(deptwise_total_salary);
+  dbms_output.put_line('List of Deptwise Total Salary List => ' || deptwise_total_salary);
+end;
+
+4.	Create a procedure NEW_EMP to insert a new employee in the EMP table. The procedure should contain a call to the function VALID_DEPTNO to check whether the department number specified for the new employee exists in the DEPT table.
+SQL >>
+--- FUNCTION - TO CHECK VALID DEPT OR NOT ---
+create or replace function valid_deptno (edeptno emp.deptno%type)
+return Boolean
+is
+  curson emp_deptno_list
+  is
+  select deptno from dept;
+  i number(2);
+  cursor_deptno dept.deptno%type;
+begin
+
+  for i in emp_deptno_list loop
+    cursor_deptno := i.deptno;
+    if cursor_deptno = edeptno then
+      return TRUE;
+    else
+      return FALSE;
+    end if;
+  end loop;
+end;
+
+--- PROCEDURE - TO INSERT DATA ---
+create or replace procedure new_emp (ename emp.ename%type, job emp.job%type, hiredate emp.hiredate%type, mgr emp.mgr%type, salary emp.salary%type, comm emp.comm%type, deptno emp.deptno%type)
+is
+  e_last_empno emp.empno%type;
+begin
+  if (valid_deptno(deptno))) then
+    select empno into e_last_empno from emp where empno = (select max(empno) from emp);
+    e_last_empno := e_last_empno + 1;
+    insert into emp values (e_last_empno, ename, job, hiredate, mgr, salary, comm, deptno);
+    dbms_output.put_line('Insertion Successful!');
+  else
+    dbms_output.put_line('Insertion Failed! - Dept Not Found');
+  end if;
+end;
+
+--- ANONYMOUS BLOCK FOR PROCEDURE EXECUTION ---
+declare
+  e_name emp.ename%type =: emp_name;
+  e_job emp.job%type =: emp_job;
+  e_hiredate emp.hiredate%type =: emp_hiredate;
+  e_mgr emp.mgr%type =: emp_mgr;
+  e_salary emp.salary%type =: emp_salary;
+  e_comm emp.comm%type =: emp_comm;
+  e_deptno emp_dept%type =: emp_deptno;
+begin
+  new_emp(e_name, e_job, e_hiredate, e_mgr, e_salary, e_comm, e_deptno);
+end;
+
+
+
+
+
