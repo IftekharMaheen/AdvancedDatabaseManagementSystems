@@ -1,0 +1,158 @@
+FINAL TERM ASSIGNMENT - ADMS
+NAME: IFTEKHAR UDDIN MULLICK
+ID: 21-44649-1
+
+•	For a given student, if his total credit hours is between 0-30, update his standing to “1”; if his total credit hours is between 31-60, update his standing to “2”; if his total credit hours is between 61-90, update his standing to “3”; if his total credit hours is greater than 91, then update his standing to “4”. Please write a PL/SQL program to do this.
+
+SQL:
+----- PROCEDURE ------
+create and replace procedure update_student_standing (s_num Student.snum%type)
+
+is
+	s_total_credit_hours number(2);
+
+begin
+	select sum(c.crhr) into s_total_credit_hours from enroll e, course c where e.c# = c.cnum and e.s# = s_num;
+
+	if s_total_credit_hours between 0 and 30 then
+		update student set standing = 1 where snum = s_num;
+	elsif s_total_credit_hours between 31 and 60 then
+		update student set standing = 2 where snum = s_num;
+	elsif s_total_credit_hours between 61 and 90 then
+		update student set standing = 3 where snum = s_num;
+	elsif s_total_credit_hours >= 91 then
+		update student set standing = 4 where snum = s_num;
+	end if;
+end;
+
+----- ANONYMOUS BLOCK -----
+declare
+    v_snum student.snum%TYPE := 123;
+begin
+    update_student_standing(v_snum);
+end;
+
+•	Write a procedure AddCourse(psnum, pcnum) that will enroll the student to a course. The program should check for the following things:
+1. The student must be a valid student.
+2. The course must be a valid course.
+3. There is still room in the class.
+4. After enrolling, the total credit hours of the student does not exceed 15 credit hours.
+5. The student is not currently enrolled in this class. You can check for current enrollment by a NULL grade.
+
+CheckValidStudent(psnum) that returns TRUE when the student exists in the STUDENT table; FALSE otherwise.
+
+CheckValidCourse(pcnum) that returns TRUE when the course exists in the COURSE table; FALSE otherwise.
+	
+CheckStanding(snum, cnum) that will return True is the student has appropriate standing to take the course, false otherwise.
+
+CheckClassCapacity(cnum) that will return true is the class still has room for one more student, and false otherwise.
+
+SQL:
+
+----- FUNCTION: CheckValidStudent(psnum) -----
+create or replace function CheckValidStudent(psnum student.snum%type)
+return boolean
+is
+    v_count number;
+begin
+    select count(*) into v_count from student where snum = psnum;
+    if (v_count > 0)
+    	return true;
+    else
+    	return false;
+    end if;
+end;
+
+----- FUNCTION: CheckValidCourse(pcnum) -----
+create or replace function CheckValidCourse(pcnum course.cnum%type)
+return boolean
+is
+    v_count number;
+begin
+    select count(*) into v_count from course where cnum = pcnum;
+    if (v_count > 0)
+    	return true;
+    else
+    	return false;
+    end if;
+end;
+
+----- FUNCTION: CheckStanding(snum, cnum) -----
+create or replace function CheckStanding(snum student.snum%type, cnum course.cnum%type)
+return boolean
+is
+    v_student_standing student.standing%type;
+    v_course_standing course.standing%type;
+
+begin
+    select standing into v_student_standing from student where snum = snum;
+    select standing into v_course_standing from course where cnum = cnum;
+    if (v_student_standing >= v_course_standing)
+    	return true;
+    else
+    	return false;
+    end if;
+end;
+
+----- FUNCTION: CheckClassCapacity(cnum) ------
+create or replace function CheckClassCapacity(cnum course.cnum%type)
+return boolean
+is
+    v_enrolled number;
+    v_capacity course.capacity%type;
+
+begin
+    select count(*) into v_enrolled from enroll where C# = cnum;
+    select capacity into v_capacity from course where cnum = cnum;
+    if (v_enrolled <= v_capacity)
+    	return true;
+    else
+    	return false;
+    end if;
+end;
+
+----- PROCEDURE ------
+create or replace AddCourse(psnum student.snum%type, pcnum course.cnum%type)
+is
+    v_is_enrolled boolean;
+    v_total_credit_hours number;
+begin
+    if not CheckValidStudent(psnum) then
+        dbms_output.put_line('Invalid student.');
+    end if;
+
+    if not CheckValidCourse(pcnum) then
+        dbms_output.put_line('Invalid course.');
+    end if;
+
+    if not CheckStanding(psnum, pcnum) then
+        dbms_output.put_line('Student does not have the appropriate standing for the course.');
+    end if;
+
+    if not CheckClassCapacity(pcnum) then
+        dbms_output.put_line(-20004, 'Class is at full capacity.');
+    end if;
+
+    select count(*) into v_is_enrolled from enroll where s# = psnum and c# = pcnum and grade IS NULL;
+
+    if v_is_enrolled = 1 then
+        dbms_output.put_line('Student is already enrolled in this course.');
+    end if;
+
+    select sum(c.crhr) into v_total_credit_hours from enroll e where e.c# = c.cnum and e.s# = psnum;
+
+    v_total_credit_hours := v_total_credit_hours + (select crhr from course where cnum = pcnum);
+
+    if v_total_credit_hours > 15 then
+        dbms_output.put_line('Enrolling in this course would exceed the maximum credit hours allowed.');
+    end if;
+
+    insert into enroll (s#, c#) values (psnum, pcnum);
+end;
+----- ANONYMOUS BLOCK -----
+declare
+    v_snum student.snum%TYPE := 123;
+    v_cnum course.cnum%type := 240;
+begin
+    AddCourse(v_snum, v_cnum);
+end;
